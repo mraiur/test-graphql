@@ -1,5 +1,55 @@
 @import "~bootstrap/dist/css/bootstrap";
 
-body{
-	background-color: green;
+html,body{
+	height:100%;
+}
+.flex-fill {
+	flex:1;
+}
+
+.container-fluid{
+
+	.sticky-top{
+		background-color: #C9C9C9;
+	}
+
+	.items-container
+	{
+		outline: solid green 1px;
+
+		.items{
+			display: block;
+			flex: 1;
+			outline: solid red 1px;
+			position: relative;
+
+			.user{
+				position: absolute;
+				padding: 12px 0;
+				width: 100%;
+				left: 0;
+				&:hover{
+					background-color: #C9C9C9;
+				}
+			}
+		}
+	}
+
+}
+
+h1.sticky-top{
+	background: #eee;
+	margin:0;
+}
+.table{
+	padding-top:0;
+	thead {
+		position: fixed;
+		left: 0;
+		right: 0;
+		width: 100%;
+
+		table-layout: fixed;
+		display: table;
+	}
 }

@@ -1,33 +1,72 @@
 const express = require('express');
-const graphqlHTTP = require('express-graphql');
-const { buildSchema } = require('graphql');
+const { ApolloServer, gql } = require('apollo-server-express');
 const Path = require('path');
 const SERVER_PORT = 3000;
 
 const Faker = require('faker');
 
-let data = [];
-for( let i = 0; i < 500; i++)
+let fakeUsers = [];
+for( let i = 0; i < 10000; i++)
 {
-	data.push({
+	fakeUsers.push({
 		id: i,
 		firstName: Faker.name.firstName(),
 		lastName: Faker.name.lastName()
 	});
 }
 
-let schema = buildSchema(`
-	type Query {
-		name: String
-	}
-`);
+const typeDefs = gql`
+  type Query{
+  	countUsers(search: String): Int
+  	users(pageSize: Int!, search: String, offset: Int): [Person]
+  },
+  type Person{
+  	id: Int
+  	firstName: String
+  	lastName: String
+  }
+`;
 
+let filterUsers = function(args){
+	let searchExp = new RegExp("^"+args.search, 'i');
+	return fakeUsers.filter(user => {
+		if( args.search )
+		{
+			return user.firstName.search(searchExp) > -1 ;
+		}
+		return true;
+	});
+};
 
-let root = {
-	getRows: () => {
-		return [];
+const  resolvers = {
+	Query : {
+		countUsers: (a, args) => {
+			return filterUsers(args).length;
+		},
+		users: function(a, args)
+		{
+			let users = filterUsers(args);
+
+			let offset = 0;
+			if( args.offset && args.offset > 0 )
+			{
+				offset = args.offset;
+				if(args.offset > users.length){
+					offset = users.length;
+				}
+			}
+			let limit = offset+args.pageSize;
+			if( limit > users.length)
+			{
+				limit = users.length;
+			}
+			return users.slice(offset, limit);
+		},
 	}
 };
+
+
+const apolloServer = new ApolloServer({ typeDefs, resolvers });
 
 let server = express();
 
@@ -38,11 +77,8 @@ server.set('view engine', 'pug');
 server.get('/', function(req, res) {
 	res.render('index', { title: 'GraphQl' });
 });
-server.use('/graphql', graphqlHTTP({
-	schema: schema,
-	rootValue: root,
-	grapiql: true
-}));
+
+apolloServer.applyMiddleware({app : server});
 
 server.listen(SERVER_PORT);
 console.log(`Running a GraphQL server not localhost:${SERVER_PORT}/graphql`);
